@@ -1,0 +1,9 @@
+{
+  "short_name": "Madriguera",
+  "name": "Madriguera 🐇",
+  "icons": [],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#F7F7F5",
+  "background_color": "#F7F7F5"
+}
