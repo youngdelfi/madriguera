@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { IconBtn, FAB, BottomNav, FormField, Input, SubmitBtn } from './components'
+import { IconBtn, BottomNav, FormField, Input, SubmitBtn } from './components'
 
 export default function AddItemScreen({ places, onNavigate, onAddItem }) {
   const [name, setName] = useState('')

@@ -272,7 +272,7 @@ function ItemRow({ item, otherPlaces, onToggle, onDelete }) {
     >
       <Checkbox checked={item.done} onChange={onToggle} />
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 14, fontWeight: 400, color: 'var(--black)', textDecoration: item.done ? 'line-through' : 'none', color: item.done ? 'var(--gray3)' : 'var(--black)' }}>
+        <div style={{ fontSize: 14, fontWeight: 400, textDecoration: item.done ? 'line-through' : 'none', color: item.done ? 'var(--gray3)' : 'var(--black)' }}>
           {item.name}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 1 }}>
