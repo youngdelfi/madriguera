@@ -192,9 +192,13 @@ export function useMadriguera() {
     logActivity({ type: 'note', item_name: places.find(p => p.id === placeId)?.name || '' })
   }, [updatePlace, places, logActivity])
 
+  const sendFeedback = useCallback(async (text) => {
+    await logActivity({ type: 'feedback', item_name: text })
+  }, [logActivity])
+
   return {
     places, items, activity, loading, currentUser, usingSupabase,
     addPlace, updatePlace, deletePlace,
-    addItem, toggleItem, deleteItem, clearDone, updateNote,
+    addItem, toggleItem, deleteItem, clearDone, updateNote, sendFeedback,
   }
 }

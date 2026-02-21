@@ -14,7 +14,7 @@ export default function App() {
   const {
     places, items, activity, loading,
     addPlace, updatePlace, deletePlace,
-    addItem, toggleItem, deleteItem, clearDone, updateNote,
+    addItem, toggleItem, deleteItem, clearDone, updateNote, sendFeedback,
   } = useMadriguera()
 
   function navigate(s) { setScreen(s) }
@@ -52,7 +52,7 @@ export default function App() {
         <PlaceScreen place={selectedPlace} items={items} places={places} onBack={() => setScreen('home')} onNavigate={navigate} onToggleItem={toggleItem} onDeleteItem={deleteItem} onClearDone={clearDone} onUpdateNote={updateNote} onAddItem={addItem} />
       )}
       {screen === 'activity' && (
-        <ActivityScreen activity={activity} onNavigate={navigate} />
+        <ActivityScreen activity={activity} onNavigate={navigate} onSendFeedback={sendFeedback} />
       )}
       {screen === 'add' && (
         <AddItemScreen places={places} onNavigate={navigate} onAddItem={addItem} />

@@ -1,7 +1,18 @@
-import React from 'react'
-import { BottomNav, activityIcon, activityText, dayLabel } from './components'
+import React, { useState } from 'react'
+import { BottomNav, activityIcon, activityText, dayLabel, ModalSheet, FormField, SubmitBtn } from './components'
 
-export default function ActivityScreen({ activity, onNavigate }) {
+export default function ActivityScreen({ activity, onNavigate, onSendFeedback }) {
+  const [showFeedback, setShowFeedback] = useState(false)
+  const [feedbackText, setFeedbackText] = useState('')
+  const [sent, setSent] = useState(false)
+
+  async function handleSend() {
+    if (!feedbackText.trim()) return
+    await onSendFeedback(feedbackText.trim())
+    setSent(true)
+    setTimeout(() => { setFeedbackText(''); setSent(false); setShowFeedback(false) }, 1000)
+  }
+
   // Group by day
   const grouped = []
   let currentDay = null
@@ -20,8 +31,22 @@ export default function ActivityScreen({ activity, onNavigate }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
       <div style={{ padding: '14px 18px 0' }}>
-        <div style={{ paddingBottom: 14 }}>
+        <div style={{ paddingBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h1 style={{ fontFamily: 'Lora, serif', fontSize: 22, fontWeight: 500, color: 'var(--black)' }}>Actividad</h1>
+          <button
+            onClick={() => setShowFeedback(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '6px 12px', borderRadius: 8,
+              background: 'var(--gray1)', border: 'none',
+              fontSize: 12.5, fontWeight: 500, color: 'var(--gray4)', cursor: 'pointer',
+              transition: 'background 0.12s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--gray2)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'var(--gray1)'}
+          >
+            💬 Feedback
+          </button>
         </div>
       </div>
 
@@ -78,6 +103,29 @@ export default function ActivityScreen({ activity, onNavigate }) {
       </div>
 
       <BottomNav screen="activity" onNavigate={onNavigate} />
+
+      <ModalSheet open={showFeedback} onClose={() => setShowFeedback(false)}>
+        <h2 style={{ fontFamily: 'Lora, serif', fontSize: 18, fontWeight: 500, marginBottom: 6 }}>Dejar feedback 💬</h2>
+        <p style={{ fontSize: 13, color: 'var(--gray4)', marginBottom: 18 }}>Contanos qué falta, qué está roto o qué mejorarías.</p>
+        <FormField label="Tu mensaje">
+          <textarea
+            value={feedbackText}
+            onChange={e => setFeedbackText(e.target.value)}
+            placeholder="ej. Me gustaría poder reordenar los lugares..."
+            rows={4}
+            style={{
+              width: '100%', background: 'var(--gray1)', border: '1px solid transparent',
+              borderRadius: 8, padding: '10px 12px', fontSize: 14, color: 'var(--black)',
+              resize: 'none', outline: 'none', fontFamily: 'DM Sans, sans-serif', lineHeight: 1.5,
+            }}
+            onFocus={e => { e.target.style.background = 'var(--white)'; e.target.style.borderColor = 'rgba(26,26,26,0.15)' }}
+            onBlur={e => { e.target.style.background = 'var(--gray1)'; e.target.style.borderColor = 'transparent' }}
+          />
+        </FormField>
+        <SubmitBtn onClick={handleSend} disabled={!feedbackText.trim()}>
+          {sent ? '✓ Enviado' : 'Enviar feedback'}
+        </SubmitBtn>
+      </ModalSheet>
     </div>
   )
 }

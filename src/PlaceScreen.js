@@ -72,36 +72,6 @@ export default function PlaceScreen({ place, items, places, onBack, onNavigate, 
           )}
         </div>
 
-        {/* Note block */}
-        {place.note && (
-          <div style={{
-            background: 'var(--amber-soft)', borderRadius: 8, padding: '10px 12px',
-            display: 'flex', gap: 8, marginBottom: 14, alignItems: 'flex-start',
-          }}>
-            <span style={{ fontSize: 14 }}>💡</span>
-            <p style={{ fontSize: 12.5, color: '#8A5A28', lineHeight: 1.5, flex: 1 }}>{place.note}</p>
-            <button onClick={() => { setNoteText(place.note || ''); setEditNote(true) }} style={{ fontSize: 14, background: 'none', border: 'none', cursor: 'pointer', opacity: 0.5 }}>✏️</button>
-          </div>
-        )}
-
-        {/* No note prompt */}
-        {!place.note && (
-          <button
-            onClick={() => { setNoteText(''); setEditNote(true) }}
-            style={{
-              width: '100%', padding: '8px 12px', marginBottom: 12,
-              background: 'none', border: '1px dashed var(--gray2)', borderRadius: 8,
-              fontSize: 12.5, fontWeight: 500, color: 'var(--gray3)', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center',
-              transition: 'border-color 0.12s, color 0.12s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--gray3)'; e.currentTarget.style.color = 'var(--gray4)' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--gray2)'; e.currentTarget.style.color = 'var(--gray3)' }}
-          >
-            <span>💡</span> Agregar nota para este lugar
-          </button>
-        )}
-
         {/* List */}
         {(pending.length > 0 || done.length > 0) ? (
           <div style={{ background: 'var(--white)', borderRadius: 12, border: '1px solid var(--border)', padding: '4px 14px', marginBottom: 8 }}>
@@ -159,6 +129,36 @@ export default function PlaceScreen({ place, items, places, onBack, onNavigate, 
             <p style={{ fontFamily: 'Lora, serif', fontSize: 15, fontWeight: 500, marginBottom: 4 }}>Sin ítems pendientes</p>
             <p style={{ fontSize: 13 }}>Tocá + para agregar algo</p>
           </div>
+        )}
+
+        {/* Note block — al fondo */}
+        {place.note && (
+          <div style={{
+            background: 'var(--amber-soft)', borderRadius: 8, padding: '10px 12px',
+            display: 'flex', gap: 8, marginTop: 4, alignItems: 'flex-start',
+          }}>
+            <span style={{ fontSize: 14 }}>💡</span>
+            <p style={{ fontSize: 12.5, color: '#8A5A28', lineHeight: 1.5, flex: 1 }}>{place.note}</p>
+            <button onClick={() => { setNoteText(place.note || ''); setEditNote(true) }} style={{ fontSize: 14, background: 'none', border: 'none', cursor: 'pointer', opacity: 0.5 }}>✏️</button>
+          </div>
+        )}
+
+        {/* No note prompt — al fondo */}
+        {!place.note && (
+          <button
+            onClick={() => { setNoteText(''); setEditNote(true) }}
+            style={{
+              width: '100%', padding: '8px 12px', marginTop: 4,
+              background: 'none', border: '1px dashed var(--gray2)', borderRadius: 8,
+              fontSize: 12.5, fontWeight: 500, color: 'var(--gray3)', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center',
+              transition: 'border-color 0.12s, color 0.12s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--gray3)'; e.currentTarget.style.color = 'var(--gray4)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--gray2)'; e.currentTarget.style.color = 'var(--gray3)' }}
+          >
+            <span>💡</span> Agregar nota para este lugar
+          </button>
         )}
       </div>
 
