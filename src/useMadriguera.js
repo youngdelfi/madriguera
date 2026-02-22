@@ -200,5 +200,6 @@ export function useMadriguera() {
     places, items, activity, loading, currentUser, usingSupabase,
     addPlace, updatePlace, deletePlace,
     addItem, toggleItem, deleteItem, clearDone, updateNote, sendFeedback,
+    logActivity,
   }
 }

@@ -1,176 +1,270 @@
 import React, { useState } from 'react'
-import { COLOR, IconBtn, FAB, BottomNav, ModalSheet, FormField, Input, SubmitBtn } from './components'
+import { Checkbox, ModalSheet, FormField, Input, SubmitBtn } from './components'
+import { nextDueLabel } from './useTasks'
 
-const COLORS = ['blue', 'green', 'amber', 'gray', 'red']
-const DEFAULT_EMOJIS = ['🛒', '🥦', '🏮', '📦', '🧴', '🍞', '💊', '🐾', '📚', '🧹']
+const DAYS = [
+  { label: 'Dom', value: 0 },
+  { label: 'Lun', value: 1 },
+  { label: 'Mar', value: 2 },
+  { label: 'Mié', value: 3 },
+  { label: 'Jue', value: 4 },
+  { label: 'Vie', value: 5 },
+  { label: 'Sáb', value: 6 },
+]
 
-export default function HomeScreen({ places, items, onNavigate, onSelectPlace, onAddPlace }) {
+export default function HomeScreen({
+  currentUser, todayTasks, getUpcoming, items, places,
+  onAddTask, onCompleteTask, onDeleteTask, onNavigate,
+}) {
   const [showAdd, setShowAdd] = useState(false)
-  const [name, setName] = useState('')
-  const [emoji, setEmoji] = useState('🛒')
-  const [color, setColor] = useState('blue')
+  const [confirmDelete, setConfirmDelete] = useState(null)
+  const [taskName, setTaskName] = useState('')
+  const [recurrence, setRecurrence] = useState('once')
+  const [selectedDays, setSelectedDays] = useState([])
+  const [dayOfMonth, setDayOfMonth] = useState('')
+  const [assignedTo, setAssignedTo] = useState('both')
+  const [taskNote, setTaskNote] = useState('')
 
-  function pendingCount(placeId) {
-    return items.filter(i => i.place_ids.includes(placeId) && !i.done).length
+  const upcoming = getUpcoming()
+  const pendingItems = items.filter(i => !i.done).length
+
+  function resetForm() {
+    setTaskName(''); setRecurrence('once'); setSelectedDays([])
+    setDayOfMonth(''); setAssignedTo('both'); setTaskNote('')
   }
 
-  function previewItems(placeId) {
-    return items.filter(i => i.place_ids.includes(placeId)).slice(0, 4)
+  async function handleAdd() {
+    if (!taskName.trim()) return
+    await onAddTask({
+      name: taskName.trim(), recurrence,
+      recurrence_days: recurrence === 'weekly' ? selectedDays : [],
+      recurrence_day_of_month: recurrence === 'monthly' ? parseInt(dayOfMonth) : null,
+      assigned_to: assignedTo, note: taskNote,
+    })
+    resetForm(); setShowAdd(false)
   }
 
-  function otherPlaces(item, currentPlaceId, allPlaces) {
-    return item.place_ids.filter(id => id !== currentPlaceId).map(id => allPlaces.find(p => p.id === id)?.name).filter(Boolean)
+  function toggleDay(d) {
+    setSelectedDays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d])
   }
 
-  async function handleAddPlace() {
-    if (!name.trim()) return
-    await onAddPlace({ name: name.trim(), emoji, color })
-    setName(''); setEmoji('🛒'); setColor('blue')
-    setShowAdd(false)
+  const canSubmit = taskName.trim() &&
+    (recurrence !== 'weekly' || selectedDays.length > 0) &&
+    (recurrence !== 'monthly' || dayOfMonth)
+
+  const greeting = () => {
+    const h = new Date().getHours()
+    if (h < 12) return 'Buenos días'
+    if (h < 19) return 'Buenas tardes'
+    return 'Buenas noches'
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
-
-      {/* Header */}
-      <div style={{ padding: '14px 18px 0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 14 }}>
-          <h1 style={{ fontFamily: 'Lora, serif', fontSize: 22, fontWeight: 500, letterSpacing: '-0.3px', color: 'var(--black)' }}>
-            Madriguera <span style={{ fontSize: 18 }}>🐇</span>
-          </h1>
-          <div style={{ display: 'flex', gap: 6 }}>
-            <IconBtn onClick={() => setShowAdd(true)} title="Nuevo lugar">＋</IconBtn>
-            <IconBtn onClick={() => onNavigate('activity')} title="Actividad">📋</IconBtn>
+      <div style={{ padding: '16px 18px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', paddingBottom: 16 }}>
+          <div>
+            <p style={{ fontSize: 12, color: 'var(--gray3)', fontWeight: 500, marginBottom: 2 }}>{greeting()}</p>
+            <h1 style={{ fontFamily: 'Lora, serif', fontSize: 22, fontWeight: 500, color: 'var(--black)' }}>
+              {currentUser.emoji} {currentUser.name}
+            </h1>
           </div>
+          <button onClick={() => onNavigate('activity')} style={{
+            display: 'flex', alignItems: 'center', gap: 5,
+            padding: '6px 12px', borderRadius: 8,
+            background: 'var(--gray1)', border: 'none',
+            fontSize: 12.5, fontWeight: 500, color: 'var(--gray4)', cursor: 'pointer', marginTop: 4,
+          }}>📋 Actividad</button>
         </div>
       </div>
 
-      {/* List */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '4px 16px 96px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--gray3)' }}>Lugares</span>
-          <button onClick={() => setShowAdd(true)} style={{ fontSize: 12, fontWeight: 500, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}>+ Nuevo</button>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 96px' }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+          <div onClick={() => onNavigate('lists')} style={{
+            flex: 1, background: 'var(--accent-soft)', borderRadius: 10, padding: '12px 14px', cursor: 'pointer',
+          }}>
+            <p style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)', lineHeight: 1 }}>{pendingItems}</p>
+            <p style={{ fontSize: 11.5, color: 'var(--accent)', fontWeight: 500, marginTop: 3 }}>ítems en listas</p>
+          </div>
+          <div style={{ flex: 1, background: 'var(--green-soft)', borderRadius: 10, padding: '12px 14px' }}>
+            <p style={{ fontSize: 22, fontWeight: 700, color: 'var(--green)', lineHeight: 1 }}>{todayTasks.length}</p>
+            <p style={{ fontSize: 11.5, color: 'var(--green)', fontWeight: 500, marginTop: 3 }}>tareas hoy</p>
+          </div>
         </div>
 
-        {places.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--gray3)' }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>🐇</div>
-            <p style={{ fontFamily: 'Lora, serif', fontSize: 16, fontWeight: 500, marginBottom: 6 }}>La madriguera está vacía</p>
-            <p style={{ fontSize: 13 }}>Agregá tu primer lugar para empezar</p>
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--gray3)' }}>Para hoy</span>
+            <button onClick={() => setShowAdd(true)} style={{ fontSize: 12, fontWeight: 500, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}>+ Nueva tarea</button>
+          </div>
+
+          {todayTasks.length === 0 ? (
+            <div style={{ background: 'var(--white)', borderRadius: 12, border: '1px solid var(--border)', padding: '24px', textAlign: 'center' }}>
+              <div style={{ fontSize: 24, marginBottom: 8 }}>✨</div>
+              <p style={{ fontFamily: 'Lora, serif', fontSize: 14, fontWeight: 500, marginBottom: 4 }}>Todo al día</p>
+              <p style={{ fontSize: 12.5, color: 'var(--gray3)' }}>No hay tareas para hoy</p>
+            </div>
+          ) : (
+            <div style={{ background: 'var(--white)', borderRadius: 12, border: '1px solid var(--border)', padding: '4px 14px' }}>
+              {todayTasks.map((task, i) => (
+                <TaskRow key={task.id} task={task} isLast={i === todayTasks.length - 1}
+                  onComplete={() => onCompleteTask(task.id)} onDelete={() => setConfirmDelete(task)} />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {upcoming.length > 0 && (
+          <div>
+            <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--gray3)', display: 'block', marginBottom: 10 }}>Próximas</span>
+            <div style={{ background: 'var(--white)', borderRadius: 12, border: '1px solid var(--border)', padding: '4px 14px' }}>
+              {upcoming.map(({ task, dayLabel, daysFrom }, i) => (
+                <div key={`${task.id}-${daysFrom}`} style={{
+                  display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0',
+                  borderBottom: i < upcoming.length - 1 ? '1px solid var(--border)' : 'none',
+                }}>
+                  <div style={{ width: 20, height: 20, borderRadius: 5, background: 'var(--gray1)', flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontSize: 13.5, color: 'var(--gray4)' }}>{task.name}</span>
+                    {task.note ? <span style={{ fontSize: 11, color: 'var(--gray3)', marginLeft: 6, fontStyle: 'italic' }}>— {task.note}</span> : null}
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--gray3)', background: 'var(--gray1)', borderRadius: 5, padding: '2px 7px' }}>
+                    {daysFrom === 1 ? 'mañana' : dayLabel}
+                  </span>
+                  <AssignedBadge assigned={task.assigned_to} />
+                </div>
+              ))}
+            </div>
           </div>
         )}
-
-        {places.map(place => {
-          const count = pendingCount(place.id)
-          const preview = previewItems(place.id)
-          const col = COLOR[place.color] || COLOR.blue
-
-          return (
-            <div
-              key={place.id}
-              onClick={() => onSelectPlace(place.id)}
-              style={{
-                background: 'var(--white)',
-                borderRadius: 12,
-                border: '1px solid var(--border)',
-                padding: '13px 14px 12px',
-                marginBottom: 8,
-                cursor: 'pointer',
-                transition: 'border-color 0.15s, box-shadow 0.15s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-hover)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.05)' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none' }}
-            >
-              {/* Top row */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: preview.length ? 10 : 0 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: col.dot, flexShrink: 0 }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: 'Lora, serif', fontSize: 15, fontWeight: 500, color: 'var(--black)' }}>
-                    {place.emoji} {place.name}
-                  </div>
-                </div>
-                {count > 0 ? (
-                  <span style={{ fontSize: 12, fontWeight: 600, color: col.text, background: col.soft, borderRadius: 5, padding: '2px 8px' }}>{count}</span>
-                ) : (
-                  <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--gray3)', background: 'var(--gray1)', borderRadius: 5, padding: '2px 8px' }}>0</span>
-                )}
-              </div>
-
-              {/* Item preview */}
-              {preview.length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                  {preview.map(item => {
-                    const others = otherPlaces(item, place.id, places)
-                    return (
-                      <span key={item.id} style={{
-                        fontSize: 12, fontWeight: 400, color: item.done ? 'var(--gray3)' : 'var(--gray4)',
-                        background: 'var(--gray1)', borderRadius: 5, padding: '3px 8px',
-                        textDecoration: item.done ? 'line-through' : 'none',
-                        display: 'flex', alignItems: 'center', gap: 3,
-                      }}>
-                        {item.name}
-                        {others.length > 0 && !item.done && (
-                          <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--accent)', background: 'var(--accent-soft)', borderRadius: 3, padding: '0 4px' }}>
-                            +{others.length}
-                          </span>
-                        )}
-                      </span>
-                    )
-                  })}
-                  {items.filter(i => i.place_ids.includes(place.id)).length > 4 && (
-                    <span style={{ fontSize: 11.5, color: 'var(--gray3)', alignSelf: 'center', padding: '3px 4px' }}>
-                      +{items.filter(i => i.place_ids.includes(place.id)).length - 4} más
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {preview.length === 0 && (
-                <p style={{ fontSize: 12, color: 'var(--gray3)', fontStyle: 'italic', marginTop: 2 }}>Sin ítems pendientes ✨</p>
-              )}
-            </div>
-          )
-        })}
       </div>
 
-      <FAB onClick={() => onNavigate('add')} />
-      <BottomNav screen="home" onNavigate={onNavigate} />
+      <button onClick={() => setShowAdd(true)} style={{
+        position: 'absolute', bottom: 76, right: 18, width: 48, height: 48,
+        background: 'var(--black)', border: 'none', borderRadius: 14,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: 'white', fontSize: 22, boxShadow: '0 4px 14px rgba(0,0,0,0.2)', cursor: 'pointer', zIndex: 10,
+      }}>+</button>
 
-      {/* Add Place Modal */}
-      <ModalSheet open={showAdd} onClose={() => setShowAdd(false)}>
-        <h2 style={{ fontFamily: 'Lora, serif', fontSize: 18, fontWeight: 500, marginBottom: 18 }}>Nuevo lugar</h2>
+      <BottomNavNew screen="home" onNavigate={onNavigate} />
 
-        <FormField label="Nombre del lugar">
-          <Input value={name} onChange={setName} placeholder="ej. Carrefour, Farmacity..." />
+      <ModalSheet open={showAdd} onClose={() => { setShowAdd(false); resetForm() }}>
+        <h2 style={{ fontFamily: 'Lora, serif', fontSize: 18, fontWeight: 500, marginBottom: 18 }}>Nueva tarea</h2>
+        <FormField label="Nombre">
+          <Input value={taskName} onChange={setTaskName} placeholder="ej. Limpiar baño, Regar plantas..." />
         </FormField>
-
-        <FormField label="Emoji">
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {DEFAULT_EMOJIS.map(e => (
-              <button key={e} onClick={() => setEmoji(e)} style={{
-                width: 36, height: 36, fontSize: 18, borderRadius: 8,
-                border: `1.5px solid ${emoji === e ? 'var(--black)' : 'transparent'}`,
-                background: emoji === e ? 'var(--gray1)' : 'none',
-                cursor: 'pointer',
-              }}>{e}</button>
+        <FormField label="Frecuencia">
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {[['once', '📅 Una vez'], ['daily', '🔁 Diaria'], ['weekly', '📆 Semanal'], ['monthly', '🗓️ Mensual']].map(([val, label]) => (
+              <button key={val} onClick={() => setRecurrence(val)} style={{
+                padding: '7px 12px', borderRadius: 8, fontSize: 13,
+                background: recurrence === val ? 'var(--black)' : 'var(--gray1)',
+                color: recurrence === val ? 'white' : 'var(--gray4)',
+                border: 'none', cursor: 'pointer', transition: 'all 0.12s',
+              }}>{label}</button>
             ))}
           </div>
         </FormField>
-
-        <FormField label="Color">
-          <div style={{ display: 'flex', gap: 8 }}>
-            {COLORS.map(c => (
-              <button key={c} onClick={() => setColor(c)} style={{
-                width: 28, height: 28, borderRadius: '50%',
-                background: COLOR[c].dot, border: `2.5px solid ${color === c ? 'var(--black)' : 'transparent'}`,
-                cursor: 'pointer', transition: 'border-color 0.12s',
-              }} />
+        {recurrence === 'weekly' && (
+          <FormField label="Qué días">
+            <div style={{ display: 'flex', gap: 5 }}>
+              {DAYS.map(d => (
+                <button key={d.value} onClick={() => toggleDay(d.value)} style={{
+                  flex: 1, padding: '7px 0', borderRadius: 7, fontSize: 11.5, fontWeight: 500,
+                  background: selectedDays.includes(d.value) ? 'var(--black)' : 'var(--gray1)',
+                  color: selectedDays.includes(d.value) ? 'white' : 'var(--gray4)',
+                  border: 'none', cursor: 'pointer', transition: 'all 0.12s',
+                }}>{d.label}</button>
+              ))}
+            </div>
+          </FormField>
+        )}
+        {recurrence === 'monthly' && (
+          <FormField label="Día del mes">
+            <Input value={dayOfMonth} onChange={setDayOfMonth} placeholder="ej. 10" style={{ width: 80 }} />
+          </FormField>
+        )}
+        <FormField label="Asignada a">
+          <div style={{ display: 'flex', gap: 6 }}>
+            {[['both', '🌿🌸 Las dos'], ['Delfi', '🌿 Delfi'], ['Cande', '🌸 Cande']].map(([val, label]) => (
+              <button key={val} onClick={() => setAssignedTo(val)} style={{
+                padding: '7px 12px', borderRadius: 8, fontSize: 13, flex: 1,
+                background: assignedTo === val ? 'var(--black)' : 'var(--gray1)',
+                color: assignedTo === val ? 'white' : 'var(--gray4)',
+                border: 'none', cursor: 'pointer', transition: 'all 0.12s',
+              }}>{label}</button>
             ))}
           </div>
         </FormField>
+        <FormField label="Nota (opcional)">
+          <Input value={taskNote} onChange={setTaskNote} placeholder="ej. mínimo 20 min..." />
+        </FormField>
+        <SubmitBtn onClick={handleAdd} disabled={!canSubmit}>Agregar tarea</SubmitBtn>
+      </ModalSheet>
 
-        <SubmitBtn onClick={handleAddPlace} disabled={!name.trim()}>Agregar lugar</SubmitBtn>
+      <ModalSheet open={!!confirmDelete} onClose={() => setConfirmDelete(null)}>
+        <h2 style={{ fontFamily: 'Lora, serif', fontSize: 18, fontWeight: 500, marginBottom: 8 }}>Eliminar tarea</h2>
+        <p style={{ fontSize: 14, color: 'var(--gray4)', marginBottom: 20 }}>¿Eliminás "{confirmDelete?.name}"?</p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => setConfirmDelete(null)} style={{ flex: 1, padding: 12, background: 'var(--gray1)', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>Cancelar</button>
+          <button onClick={() => { onDeleteTask(confirmDelete.id); setConfirmDelete(null) }} style={{ flex: 1, padding: 12, background: 'var(--red)', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, color: 'white', cursor: 'pointer' }}>Eliminar</button>
+        </div>
       </ModalSheet>
     </div>
+  )
+}
+
+function TaskRow({ task, isLast, onComplete, onDelete }) {
+  const [hover, setHover] = useState(false)
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '10px 0', borderBottom: isLast ? 'none' : '1px solid var(--border)' }}
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+      <Checkbox checked={false} onChange={onComplete} />
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 14, color: 'var(--black)' }}>{task.name}</div>
+        <div style={{ display: 'flex', gap: 5, alignItems: 'center', marginTop: 2 }}>
+          <span style={{ fontSize: 11, color: 'var(--gray3)' }}>
+            {task.recurrence === 'once' ? '📅' : '🔁'} {nextDueLabel(task)}
+          </span>
+          {task.note && <span style={{ fontSize: 11, color: 'var(--gray3)', fontStyle: 'italic' }}>— {task.note}</span>}
+        </div>
+      </div>
+      <AssignedBadge assigned={task.assigned_to} />
+      {hover && (
+        <button onClick={e => { e.stopPropagation(); onDelete() }} style={{ fontSize: 13, color: 'var(--red)', background: 'var(--red-soft)', border: 'none', borderRadius: 6, padding: '3px 7px', cursor: 'pointer' }}>🗑️</button>
+      )}
+    </div>
+  )
+}
+
+function AssignedBadge({ assigned }) {
+  if (!assigned || assigned === 'both') return <span style={{ fontSize: 14 }}>🌿🌸</span>
+  if (assigned === 'Delfi') return <span style={{ fontSize: 14 }}>🌿</span>
+  return <span style={{ fontSize: 14 }}>🌸</span>
+}
+
+export function BottomNavNew({ screen, onNavigate }) {
+  const tabs = [
+    { id: 'home', icon: '🏠', label: 'Inicio' },
+    { id: 'lists', icon: '🛒', label: 'Listas' },
+    { id: 'settings', icon: '⚙️', label: 'Lugares' },
+  ]
+  return (
+    <nav style={{
+      position: 'absolute', bottom: 0, left: 0, right: 0,
+      background: 'rgba(247,247,245,0.92)', backdropFilter: 'blur(12px)',
+      borderTop: '1px solid var(--border)', display: 'flex',
+      padding: '8px 0 max(16px, env(safe-area-inset-bottom))', zIndex: 20,
+    }}>
+      {tabs.map(tab => (
+        <button key={tab.id} onClick={() => onNavigate(tab.id)} style={{
+          flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+          background: 'none', border: 'none', padding: '4px 0', cursor: 'pointer',
+        }}>
+          <span style={{ fontSize: 18, opacity: screen === tab.id ? 1 : 0.35, lineHeight: 1 }}>{tab.icon}</span>
+          <span style={{ fontSize: 10, fontWeight: screen === tab.id ? 600 : 500, color: screen === tab.id ? 'var(--black)' : 'var(--gray3)', letterSpacing: '0.02em' }}>{tab.label}</span>
+        </button>
+      ))}
+    </nav>
   )
 }

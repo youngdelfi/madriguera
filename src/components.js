@@ -56,7 +56,7 @@ export function Checkbox({ checked, onChange }) {
 export function BottomNav({ screen, onNavigate }) {
   const tabs = [
     { id: 'home', icon: '🏠', label: 'Inicio' },
-    { id: 'activity', icon: '📋', label: 'Actividad' },
+    { id: 'lists', icon: '🛒', label: 'Listas' },
     { id: 'settings', icon: '⚙️', label: 'Lugares' },
   ]
   return (
@@ -227,7 +227,7 @@ export function SubmitBtn({ children, onClick, disabled }) {
 
 // ─── Activity icon ────────────────────────────────────────────────────────────
 export function activityIcon(type) {
-  return { add: '➕', check: '✅', delete: '🗑️', note: '✏️', new_place: '🆕', uncheck: '↩️', feedback: '💬' }[type] || '•'
+  return { add: '➕', check: '✅', delete: '🗑️', note: '✏️', new_place: '🆕', uncheck: '↩️', feedback: '💬', task_add: '📋', task_done: '✅', task_delete: '🗑️' }[type] || '•'
 }
 
 export function activityText(entry) {
@@ -245,6 +245,12 @@ export function activityText(entry) {
       return <><strong>{entry.user_name}</strong> creó el lugar <Chip>{entry.item_name}</Chip></>
     case 'feedback':
       return <><strong>{entry.user_name}</strong> dejó feedback: <Chip>{entry.item_name}</Chip></>
+    case 'task_add':
+      return <><strong>{entry.user_name}</strong> creó la tarea <Chip>{entry.item_name}</Chip></>
+    case 'task_done':
+      return <><strong>{entry.user_name}</strong> completó <Chip>{entry.item_name}</Chip> ✓</>
+    case 'task_delete':
+      return <><strong>{entry.user_name}</strong> eliminó la tarea <Chip>{entry.item_name}</Chip></>
     default:
       return <><strong>{entry.user_name}</strong> {entry.item_name}</>
   }
