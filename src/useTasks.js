@@ -142,6 +142,14 @@ export function useTasks(currentUser, logActivity) {
     logActivity({ type: 'task_done', item_name: task.name })
   }, [tasks, currentUser, usingSupabase, logActivity])
 
+  const updateTask = useCallback(async (id, data) => {
+    if (usingSupabase) {
+      await supabase.from('tasks').update(data).eq('id', id)
+    } else {
+      setTasks(prev => prev.map(t => t.id === id ? { ...t, ...data } : t))
+    }
+  }, [usingSupabase])
+
   const uncompleteTask = useCallback(async (id) => {
     const task = tasks.find(t => t.id === id)
     if (!task) return
@@ -199,5 +207,5 @@ export function useTasks(currentUser, logActivity) {
     return upcoming.slice(0, 5)
   }
 
-  return { tasks, todayTasks, pendingTodayTasks, doneTodayTasks, getUpcoming, addTask, completeTask, uncompleteTask, deleteTask }
+  return { tasks, todayTasks, pendingTodayTasks, doneTodayTasks, getUpcoming, addTask, completeTask, uncompleteTask, updateTask, deleteTask }
 }
