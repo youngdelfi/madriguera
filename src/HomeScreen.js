@@ -247,7 +247,7 @@ export function BottomNavNew({ screen, onNavigate }) {
   const tabs = [
     { id: 'home', icon: '🏠', label: 'Inicio' },
     { id: 'lists', icon: '🛒', label: 'Listas' },
-    { id: 'settings', icon: '⚙️', label: 'Lugares' },
+    { id: 'settings', icon: '📍', label: 'Lugares' },
   ]
   return (
     <nav style={{

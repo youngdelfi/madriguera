@@ -2,11 +2,26 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from './supabase'
 
 // ─── Local user identity (stored in localStorage) ───────────────────────────
-function getLocalUser() {
+const EMAIL_MAP = {
+  'delfi.young@gmail.com':    { name: 'Delfi', emoji: '🌿' },
+  'candelacabido@gmail.com':  { name: 'Cande', emoji: '🌸' },
+}
+
+function getLocalUser(session) {
+  if (session?.user?.email) {
+    const email = session.user.email.toLowerCase()
+    if (EMAIL_MAP[email]) {
+      const mapped = EMAIL_MAP[email]
+      return { id: session.user.id, ...mapped }
+    }
+    // Unknown email: use first part of email as name
+    const name = email.split('@')[0]
+    return { id: session.user.id, name, emoji: '🐇' }
+  }
+  // Demo mode (no Supabase)
   let user = localStorage.getItem('madriguera_user')
   if (!user) {
-    const id = Math.random().toString(36).slice(2, 8)
-    user = JSON.stringify({ id, name: 'Yo', emoji: '🌿' })
+    user = JSON.stringify({ id: 'demo', name: 'Delfi', emoji: '🌿' })
     localStorage.setItem('madriguera_user', user)
   }
   return JSON.parse(user)
@@ -47,12 +62,12 @@ const isSupabaseConfigured = () => {
   return url && url !== 'https://your-project.supabase.co' && url.includes('supabase')
 }
 
-export function useMadriguera() {
+export function useMadriguera(session) {
   const [places, setPlaces] = useState(DEMO_PLACES)
   const [items, setItems] = useState(DEMO_ITEMS)
   const [activity, setActivity] = useState(DEMO_ACTIVITY)
   const [loading, setLoading] = useState(false)
-  const currentUser = getLocalUser()
+  const currentUser = getLocalUser(session)
   const usingSupabase = isSupabaseConfigured()
 
   // ── Load from Supabase ────────────────────────────────────────────────────
