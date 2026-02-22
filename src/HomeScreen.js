@@ -26,7 +26,7 @@ function getDateOptions() {
 
 export default function HomeScreen({
   currentUser, pendingTodayTasks, doneTodayTasks, getUpcoming, items,
-  onAddTask, onCompleteTask, onDeleteTask, onNavigate,
+  onAddTask, onCompleteTask, onUncompleteTask, onDeleteTask, onNavigate,
 }) {
   const [showAdd, setShowAdd] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(null)
@@ -130,7 +130,7 @@ export default function HomeScreen({
               {doneTodayTasks.map((task, i) => (
                 <TaskRow key={task.id} task={task} done={true}
                   isLast={i === doneTodayTasks.length - 1}
-                  onComplete={() => {}}
+                  onComplete={() => onUncompleteTask(task.id)}
                   onDelete={() => setConfirmDelete(task)} />
               ))}
             </div>
