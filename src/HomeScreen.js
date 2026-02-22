@@ -54,15 +54,16 @@ function SwipeRow({ checked, onCheck, label, sublabel, badge, isLast, onEdit, on
           <span style={{ fontSize: 16 }}>🗑️</span>Eliminar
         </button>
       </div>
-      {/* Row */}
+      {/* Row — no opacity here, opacity goes inside so overflow:hidden works */}
       <div
         onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
         style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '8px 8px 8px 0',
           background: 'var(--white)', transform: `translateX(${swipeX}px)`,
           transition: swiping ? 'none' : 'transform 0.2s ease',
-          opacity: dimmed ? 0.65 : 1 }}>
+          minWidth: '100%',
+        }}>
         {/* 44px tap target */}
-        <div onClick={handleCheck} style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}>
+        <div onClick={handleCheck} style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer', WebkitTapHighlightColor: 'transparent', opacity: dimmed ? 0.65 : 1 }}>
           <div style={{
             width: 22, height: 22, borderRadius: 6,
             border: checked ? 'none' : '2px solid var(--gray2)',
@@ -73,13 +74,13 @@ function SwipeRow({ checked, onCheck, label, sublabel, badge, isLast, onEdit, on
             {checked && <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
           </div>
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: 1, minWidth: 0, opacity: dimmed ? 0.65 : 1 }}>
           <div style={{ fontSize: 14, color: checked ? 'var(--gray3)' : 'var(--black)', textDecoration: checked ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {label}
           </div>
           {sublabel && <div style={{ fontSize: 11, color: 'var(--gray3)', marginTop: 1 }}>{sublabel}</div>}
         </div>
-        {badge && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--gray3)', background: 'var(--gray1)', borderRadius: 5, padding: '2px 7px', flexShrink: 0, whiteSpace: 'nowrap' }}>{badge}</span>}
+        {badge && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--gray3)', background: 'var(--gray1)', borderRadius: 5, padding: '2px 7px', flexShrink: 0, whiteSpace: 'nowrap', opacity: dimmed ? 0.65 : 1 }}>{badge}</span>}
         <div style={{ fontSize: 11, color: 'var(--gray2)', paddingLeft: 4, paddingRight: 2, flexShrink: 0 }}>‹</div>
       </div>
     </div>
@@ -276,7 +277,7 @@ export default function HomeScreen({
                   sublabel={done
                     ? `${task.done_by_emoji} ${task.done_by} · ${new Date(task.done_at).toLocaleDateString('es-AR', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}`
                     : [task.note, dueToday ? '(toca hoy)' : ''].filter(Boolean).join(' · ') || undefined}
-                  badge={dueToday && !done ? '🔔 hoy' : dayLabel}
+                  badge={`${AssignedBadge({ assigned: task.assigned_to })} · ${dueToday && !done ? '🔔 hoy' : dayLabel}`}
                   isLast={i === weekTasks.length - 1}
                   dimmed={done}
                   onEdit={() => setEditTask(task)}
@@ -299,7 +300,7 @@ export default function HomeScreen({
                   sublabel={done
                     ? `${task.done_by_emoji} ${task.done_by} · ${new Date(task.done_at).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}`
                     : task.note || undefined}
-                  badge={dueToday && !done ? '🔔 hoy' : dayLabel}
+                  badge={`${AssignedBadge({ assigned: task.assigned_to })} · ${dueToday && !done ? '🔔 hoy' : dayLabel}`}
                   isLast={i === monthTasks.length - 1}
                   dimmed={done}
                   onEdit={() => setEditTask(task)}
