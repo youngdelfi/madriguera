@@ -46,7 +46,7 @@ export default function App() {
     logActivity,
   } = useMadriguera(session)
 
-  const { todayTasks, pendingTodayTasks, doneTodayTasks, getUpcoming, addTask, completeTask, uncompleteTask, updateTask, deleteTask } = useTasks(currentUser, logActivity)
+  const { todayTasks, pendingTodayTasks, doneTodayTasks, weekTasks, monthTasks, upcomingTasks, addTask, completeTask, uncompleteTask, updateTask, deleteTask } = useTasks(currentUser, logActivity)
 
   function navigate(s) { setScreen(s) }
 
@@ -87,7 +87,9 @@ export default function App() {
           todayTasks={todayTasks}
           pendingTodayTasks={pendingTodayTasks}
           doneTodayTasks={doneTodayTasks}
-          getUpcoming={getUpcoming}
+          weekTasks={weekTasks}
+          monthTasks={monthTasks}
+          upcomingTasks={upcomingTasks}
           items={items}
           places={places}
           onAddTask={addTask}
