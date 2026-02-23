@@ -189,7 +189,6 @@ export function useTasks(currentUser, logActivity) {
 
   // ESTA SEMANA: weekly tasks + once tasks due this week (but not today)
   const weekEnd = endOfWeek()
-  const weekStart = startOfWeek()
   const todayStart = new Date(); todayStart.setHours(0,0,0,0)
   const todayEnd = new Date(); todayEnd.setHours(23,59,59,999)
 
