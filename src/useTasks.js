@@ -187,24 +187,50 @@ export function useTasks(currentUser, logActivity) {
   const pendingTodayTasks = todayTasks.filter(t => !isDoneToday(t))
   const doneTodayTasks = todayTasks.filter(t => isDoneToday(t))
 
-  // ESTA SEMANA: all weekly tasks — show all week, with their day label
-  const weekTasks = tasks
-    .filter(t => t.recurrence === 'weekly')
-    .map(t => ({
-      task: t,
-      dayLabel: weeklyDayLabel(t),
-      dueToday: (t.recurrence_days || []).includes(todayDow),
-      done: isDoneThisWeek(t),
-    }))
-    .sort((a, b) => {
-      // sort by next occurrence day
-      const nextDay = (days, today) => {
-        const sorted = [...days].sort((x,y) => (x-today+7)%7 - (y-today+7)%7)
-        return sorted[0] ?? 0
-      }
-      return (nextDay(a.task.recurrence_days||[], todayDow) - todayDow + 7) % 7
-           - (nextDay(b.task.recurrence_days||[], todayDow) - todayDow + 7) % 7
-    })
+  // ESTA SEMANA: weekly tasks + once tasks due this week (but not today)
+  const weekEnd = endOfWeek()
+  const weekStart = startOfWeek()
+  const todayStart = new Date(); todayStart.setHours(0,0,0,0)
+  const todayEnd = new Date(); todayEnd.setHours(23,59,59,999)
+
+  const weekTasks = [
+    ...tasks
+      .filter(t => t.recurrence === 'weekly')
+      .map(t => ({
+        task: t,
+        dayLabel: weeklyDayLabel(t),
+        dueToday: (t.recurrence_days || []).includes(todayDow),
+        done: isDoneThisWeek(t),
+      })),
+    ...tasks
+      .filter(t => {
+        if (t.recurrence !== 'once' || !t.due_date) return false
+        const d = new Date(t.due_date); d.setHours(0,0,0,0)
+        return d > todayEnd && d <= weekEnd
+      })
+      .map(t => {
+        const d = new Date(t.due_date)
+        const diff = Math.round((d - todayStart) / 86400000)
+        return {
+          task: t,
+          dayLabel: diff === 1 ? 'mañana' : `el ${DAY_NAMES[d.getDay()]}`,
+          dueToday: false,
+          done: isDoneThisWeek(t),
+        }
+      }),
+  ].sort((a, b) => {
+    const nextDay = (days, today) => {
+      const sorted = [...days].sort((x,y) => (x-today+7)%7 - (y-today+7)%7)
+      return sorted[0] ?? 0
+    }
+    const aDiff = a.task.recurrence === 'weekly'
+      ? (nextDay(a.task.recurrence_days||[], todayDow) - todayDow + 7) % 7
+      : Math.round((new Date(a.task.due_date) - todayStart) / 86400000)
+    const bDiff = b.task.recurrence === 'weekly'
+      ? (nextDay(b.task.recurrence_days||[], todayDow) - todayDow + 7) % 7
+      : Math.round((new Date(b.task.due_date) - todayStart) / 86400000)
+    return aDiff - bDiff
+  })
 
   // ESTE MES: all monthly tasks — show all month, with day-of-month label
   const monthTasks = tasks
@@ -217,13 +243,12 @@ export function useTasks(currentUser, logActivity) {
     }))
     .sort((a, b) => a.task.recurrence_day_of_month - b.task.recurrence_day_of_month)
 
-  // PRÓXIMAMENTE: once tasks with future due date
+  // PRÓXIMAMENTE: once tasks with due date after this week
   const upcomingTasks = tasks
     .filter(t => {
       if (t.recurrence !== 'once' || !t.due_date) return false
       const d = new Date(t.due_date); d.setHours(0,0,0,0)
-      const tod = new Date(); tod.setHours(0,0,0,0)
-      return d > tod
+      return d > weekEnd
     })
     .map(t => ({ task: t, dayLabel: nextDueLabel(t) }))
     .sort((a,b) => new Date(a.task.due_date) - new Date(b.task.due_date))

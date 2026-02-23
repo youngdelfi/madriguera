@@ -321,7 +321,7 @@ export default function HomeScreen({
                   onCheck={() => onCompleteTask(task.id)}
                   label={task.name}
                   sublabel={task.note || undefined}
-                  badge={dayLabel}
+                  badge={`${AssignedBadge({ assigned: task.assigned_to })} · ${dayLabel}`}
                   isLast={i === upcomingTasks.length - 1}
                   onEdit={() => setEditTask(task)}
                   onDelete={() => setConfirmDelete(task)} />
@@ -362,7 +362,7 @@ export function BottomNavNew({ screen, onNavigate }) {
   const tabs = [
     { id: 'home', icon: '🏠', label: 'Inicio' },
     { id: 'lists', icon: '🛒', label: 'Listas' },
-    { id: 'settings', icon: '⚙️', label: 'Lugares' },
+    { id: 'settings', icon: '📍', label: 'Lugares' },
   ]
   return (
     <nav style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(247,247,245,0.92)', backdropFilter: 'blur(12px)', borderTop: '1px solid var(--border)', display: 'flex', padding: '8px 0 max(16px, env(safe-area-inset-bottom))', zIndex: 20 }}>
