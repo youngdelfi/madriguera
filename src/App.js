@@ -42,7 +42,7 @@ export default function App() {
   const {
     places, items, activity, loading, currentUser,
     addPlace, updatePlace, deletePlace,
-    addItem, toggleItem, deleteItem, clearDone, updateNote, sendFeedback,
+    addItem, toggleItem, updateItem, deleteItem, clearDone, updateNote, sendFeedback,
     logActivity,
   } = useMadriguera(session)
 
@@ -110,7 +110,7 @@ export default function App() {
         <PlaceScreen
           place={selectedPlace} items={items} places={places}
           onBack={() => setScreen('lists')} onNavigate={navigate}
-          onToggleItem={toggleItem} onDeleteItem={deleteItem}
+          onToggleItem={toggleItem} onUpdateItem={updateItem} onDeleteItem={deleteItem}
           onClearDone={clearDone} onUpdateNote={updateNote} onAddItem={addItem}
         />
       )}

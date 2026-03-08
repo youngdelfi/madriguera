@@ -172,16 +172,23 @@ export function useMadriguera(session) {
       ? { done: false, done_by: null, done_at: null }
       : { done: true, done_by: currentUser.name, done_at: new Date().toISOString() }
 
+    // Optimistic update — UI reacts instantly
+    setItems(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i))
     if (usingSupabase) {
-      await supabase.from('items').update(updates).eq('id', id)
-    } else {
-      setItems(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i))
+      supabase.from('items').update(updates).eq('id', id)
     }
     if (!item.done) {
       const placeName = places.find(p => item.place_ids[0] === p.id)?.name || ''
       logActivity({ type: 'check', item_name: item.name, place_name: placeName })
     }
   }, [items, currentUser, usingSupabase, places, logActivity])
+
+  const updateItem = useCallback(async (id, updates) => {
+    setItems(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i))
+    if (usingSupabase) {
+      supabase.from('items').update(updates).eq('id', id)
+    }
+  }, [usingSupabase])
 
   const deleteItem = useCallback(async (id) => {
     const item = items.find(i => i.id === id)
@@ -214,7 +221,7 @@ export function useMadriguera(session) {
   return {
     places, items, activity, loading, currentUser, usingSupabase,
     addPlace, updatePlace, deletePlace,
-    addItem, toggleItem, deleteItem, clearDone, updateNote, sendFeedback,
+    addItem, toggleItem, updateItem, deleteItem, clearDone, updateNote, sendFeedback,
     logActivity,
   }
 }

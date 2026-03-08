@@ -1,11 +1,12 @@
-import React, { useState } from 'react'
-import { COLOR, Checkbox, IconBtn, FAB, BottomNav, ModalSheet, FormField, Input, SubmitBtn } from './components'
+import React, { useState, useRef, useCallback } from 'react'
+import { COLOR, IconBtn, FAB, BottomNav, ModalSheet, FormField, Input, SubmitBtn } from './components'
 
-export default function PlaceScreen({ place, items, places, onBack, onNavigate, onToggleItem, onDeleteItem, onClearDone, onUpdateNote, onAddItem }) {
+export default function PlaceScreen({ place, items, places, onBack, onNavigate, onToggleItem, onUpdateItem, onDeleteItem, onClearDone, onUpdateNote, onAddItem }) {
   const [editNote, setEditNote] = useState(false)
   const [noteText, setNoteText] = useState(place?.note || '')
   const [showAdd, setShowAdd] = useState(false)
   const [showConfirm, setShowConfirm] = useState(null) // item id to delete
+  const [editItem, setEditItem] = useState(null) // item being edited
 
   // item form
   const [itemName, setItemName] = useState('')
@@ -38,6 +39,16 @@ export default function PlaceScreen({ place, items, places, onBack, onNavigate, 
     await onAddItem({ name: itemName.trim(), qty, unit, place_ids: selectedPlaces, note: itemNote })
     setItemName(''); setQty(''); setUnit(''); setItemNote(''); setSelectedPlaces([place.id])
     setShowAdd(false)
+  }
+
+  function openEdit(item) {
+    setEditItem(item)
+  }
+
+  async function handleUpdateItem(updates) {
+    if (!editItem) return
+    await onUpdateItem(editItem.id, updates)
+    setEditItem(null)
   }
 
   function togglePlace(id) {
@@ -81,13 +92,15 @@ export default function PlaceScreen({ place, items, places, onBack, onNavigate, 
                 <p style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--gray3)', padding: '10px 0 6px' }}>
                   Pendientes
                 </p>
-                {pending.map(item => (
-                  <ItemRow
+                {pending.map((item, i) => (
+                  <SwipeItemRow
                     key={item.id}
                     item={item}
                     otherPlaces={otherPlaceNames(item)}
                     onToggle={() => onToggleItem(item.id)}
                     onDelete={() => setShowConfirm(item.id)}
+                    onEdit={() => openEdit(item)}
+                    isLast={i === pending.length - 1 && done.length === 0}
                   />
                 ))}
               </>
@@ -98,13 +111,15 @@ export default function PlaceScreen({ place, items, places, onBack, onNavigate, 
                 <p style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--gray3)', padding: '10px 0 6px' }}>
                   Comprados
                 </p>
-                {done.map(item => (
-                  <ItemRow
+                {done.map((item, i) => (
+                  <SwipeItemRow
                     key={item.id}
                     item={item}
                     otherPlaces={otherPlaceNames(item)}
                     onToggle={() => onToggleItem(item.id)}
                     onDelete={() => setShowConfirm(item.id)}
+                    onEdit={() => openEdit(item)}
+                    isLast={i === done.length - 1}
                   />
                 ))}
                 <button
@@ -252,55 +267,160 @@ export default function PlaceScreen({ place, items, places, onBack, onNavigate, 
           </button>
         </div>
       </ModalSheet>
+
+      {/* Edit item modal */}
+      {editItem && (
+        <EditItemModal
+          item={editItem}
+          places={places}
+          onClose={() => setEditItem(null)}
+          onSave={handleUpdateItem}
+        />
+      )}
     </div>
   )
 }
 
-function ItemRow({ item, otherPlaces, onToggle, onDelete }) {
-  const [pressed, setPressed] = useState(false)
+function SwipeItemRow({ item, otherPlaces, onToggle, onDelete, onEdit, isLast }) {
+  const [swipeX, setSwipeX] = useState(0)
+  const [swiping, setSwiping] = useState(false)
+  const startX = useRef(null)
+
+  const onTouchStart = (e) => { startX.current = e.touches[0].clientX; setSwiping(false) }
+  const onTouchMove = useCallback((e) => {
+    if (startX.current === null) return
+    const dx = e.touches[0].clientX - startX.current
+    if (Math.abs(dx) > 8) setSwiping(true)
+    if (dx < 0) setSwipeX(Math.max(dx, -130))
+    else setSwipeX(Math.min(0, swipeX + dx * 0.3))
+  }, [swipeX])
+  const onTouchEnd = useCallback(() => {
+    setSwipeX(swipeX < -60 ? -130 : 0)
+    startX.current = null
+    setTimeout(() => setSwiping(false), 100)
+  }, [swipeX])
+
+  const handleTap = () => { if (!swiping) onToggle() }
+  const close = () => setSwipeX(0)
 
   return (
-    <div
-      style={{
-        display: 'flex', alignItems: 'center', gap: 11,
-        padding: '9px 0', borderBottom: '1px solid var(--border)',
-        opacity: item.done ? 0.6 : 1,
-        transition: 'opacity 0.15s',
-      }}
-      onMouseEnter={e => setPressed(true)}
-      onMouseLeave={e => setPressed(false)}
-    >
-      <Checkbox checked={item.done} onChange={onToggle} />
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 14, fontWeight: 400, textDecoration: item.done ? 'line-through' : 'none', color: item.done ? 'var(--gray3)' : 'var(--black)' }}>
-          {item.name}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 1 }}>
-          {(item.qty || item.unit) && (
-            <span style={{ fontSize: 11.5, color: 'var(--gray3)' }}>
-              {[item.qty, item.unit].filter(Boolean).join(' ')}
-            </span>
-          )}
-          {otherPlaces.map(p => (
-            <span key={p.id} style={{ fontSize: 10.5, fontWeight: 500, color: 'var(--accent)', background: 'var(--accent-soft)', borderRadius: 4, padding: '1px 5px' }}>
-              {p.emoji} {p.name}
-            </span>
-          ))}
-          {item.note && <span style={{ fontSize: 11, color: 'var(--gray3)', fontStyle: 'italic' }}>— {item.note}</span>}
-          {item.done && item.done_by && (
-            <span style={{ fontSize: 11, color: 'var(--gray3)' }}>{item.done_by}</span>
-          )}
-        </div>
-      </div>
-      {item.qty && !item.done && <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--gray3)' }}>{item.qty}{item.unit ? ` ${item.unit}` : ''}</span>}
-      {pressed && (
+    <div style={{ position: 'relative', overflow: 'hidden', borderBottom: isLast ? 'none' : '1px solid var(--border)' }}>
+      {/* Swipe action buttons */}
+      <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, display: 'flex', width: 130 }}>
         <button
-          onClick={e => { e.stopPropagation(); onDelete() }}
-          style={{ fontSize: 13, color: 'var(--red)', background: 'var(--red-soft)', border: 'none', borderRadius: 6, padding: '3px 7px', cursor: 'pointer' }}
+          onClick={() => { close(); onEdit() }}
+          style={{ flex: 1, border: 'none', background: '#4A90D9', color: 'white', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}
         >
-          🗑️
+          <span style={{ fontSize: 16 }}>✏️</span>Editar
         </button>
-      )}
+        <button
+          onClick={() => { close(); onDelete() }}
+          style={{ flex: 1, border: 'none', background: '#E05252', color: 'white', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}
+        >
+          <span style={{ fontSize: 16 }}>🗑️</span>Eliminar
+        </button>
+      </div>
+      {/* Row — tap anywhere to toggle */}
+      <div
+        onClick={handleTap}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 11,
+          padding: '9px 0', background: 'var(--white)',
+          transform: `translateX(${swipeX}px)`,
+          transition: swiping ? 'none' : 'transform 0.2s ease',
+          cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
+          opacity: item.done ? 0.6 : 1,
+        }}
+      >
+        {/* Visual-only checkbox */}
+        <div style={{
+          width: 22, height: 22, borderRadius: 6, flexShrink: 0,
+          border: item.done ? 'none' : '2px solid var(--gray2)',
+          background: item.done ? 'var(--green)' : 'var(--white)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'all 0.15s', pointerEvents: 'none',
+        }}>
+          {item.done && <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 400, textDecoration: item.done ? 'line-through' : 'none', color: item.done ? 'var(--gray3)' : 'var(--black)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {item.name}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 1, flexWrap: 'wrap' }}>
+            {(item.qty || item.unit) && (
+              <span style={{ fontSize: 11.5, color: 'var(--gray3)' }}>
+                {[item.qty, item.unit].filter(Boolean).join(' ')}
+              </span>
+            )}
+            {otherPlaces.map(p => (
+              <span key={p.id} style={{ fontSize: 10.5, fontWeight: 500, color: 'var(--accent)', background: 'var(--accent-soft)', borderRadius: 4, padding: '1px 5px' }}>
+                {p.emoji} {p.name}
+              </span>
+            ))}
+            {item.note && <span style={{ fontSize: 11, color: 'var(--gray3)', fontStyle: 'italic' }}>— {item.note}</span>}
+            {item.done && item.done_by && (
+              <span style={{ fontSize: 11, color: 'var(--gray3)' }}>{item.done_by}</span>
+            )}
+          </div>
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--gray2)', paddingRight: 2, flexShrink: 0 }}>‹</div>
+      </div>
     </div>
+  )
+}
+
+function EditItemModal({ item, places, onClose, onSave }) {
+  const [name, setName] = useState(item.name)
+  const [qty, setQty] = useState(item.qty || '')
+  const [unit, setUnit] = useState(item.unit || '')
+  const [selectedPlaces, setSelectedPlaces] = useState(item.place_ids || [])
+  const [note, setNote] = useState(item.note || '')
+
+  function togglePlace(id) {
+    setSelectedPlaces(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id])
+  }
+
+  return (
+    <ModalSheet open onClose={onClose}>
+      <h2 style={{ fontFamily: 'Lora, serif', fontSize: 18, fontWeight: 500, marginBottom: 18 }}>Editar ítem</h2>
+      <FormField label="Nombre">
+        <Input value={name} onChange={setName} placeholder="ej. Huevos, Detergente..." />
+      </FormField>
+      <FormField label="Cantidad">
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Input value={qty} onChange={setQty} placeholder="cantidad" style={{ flex: 2 }} />
+          <Input value={unit} onChange={setUnit} placeholder="unidad" style={{ flex: 1 }} />
+        </div>
+      </FormField>
+      <FormField label="Dónde comprarlo">
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {places.map(p => (
+            <button
+              key={p.id}
+              onClick={() => togglePlace(p.id)}
+              style={{
+                padding: '6px 12px',
+                background: selectedPlaces.includes(p.id) ? 'var(--black)' : 'var(--gray1)',
+                border: '1px solid transparent',
+                borderRadius: 7, fontSize: 13, fontWeight: selectedPlaces.includes(p.id) ? 500 : 400,
+                color: selectedPlaces.includes(p.id) ? 'white' : 'var(--gray4)',
+                cursor: 'pointer', transition: 'all 0.12s',
+              }}
+            >
+              {p.emoji} {p.name}
+            </button>
+          ))}
+        </div>
+      </FormField>
+      <FormField label="Nota (opcional)">
+        <Input value={note} onChange={setNote} placeholder="ej. sin sal, marca específica..." />
+      </FormField>
+      <SubmitBtn onClick={() => onSave({ name: name.trim(), qty, unit, place_ids: selectedPlaces, note })} disabled={!name.trim() || selectedPlaces.length === 0}>
+        Guardar cambios
+      </SubmitBtn>
+    </ModalSheet>
   )
 }
