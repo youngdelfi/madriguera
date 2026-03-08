@@ -332,7 +332,6 @@ function SwipeItemRow({ item, otherPlaces, onToggle, onDelete, onEdit, isLast })
           transform: `translateX(${swipeX}px)`,
           transition: swiping ? 'none' : 'transform 0.2s ease',
           cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
-          opacity: item.done ? 0.6 : 1,
         }}
       >
         {/* Visual-only checkbox */}
@@ -342,10 +341,11 @@ function SwipeItemRow({ item, otherPlaces, onToggle, onDelete, onEdit, isLast })
           background: item.done ? 'var(--green)' : 'var(--white)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           transition: 'all 0.15s', pointerEvents: 'none',
+          opacity: item.done ? 0.65 : 1,
         }}>
           {item.done && <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: 1, minWidth: 0, opacity: item.done ? 0.65 : 1 }}>
           <div style={{ fontSize: 14, fontWeight: 400, textDecoration: item.done ? 'line-through' : 'none', color: item.done ? 'var(--gray3)' : 'var(--black)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {item.name}
           </div>
@@ -366,7 +366,7 @@ function SwipeItemRow({ item, otherPlaces, onToggle, onDelete, onEdit, isLast })
             )}
           </div>
         </div>
-        <div style={{ fontSize: 11, color: 'var(--gray2)', paddingRight: 2, flexShrink: 0 }}>‹</div>
+        <div style={{ fontSize: 11, color: 'var(--gray2)', paddingRight: 2, flexShrink: 0, opacity: item.done ? 0.65 : 1 }}>‹</div>
       </div>
     </div>
   )
